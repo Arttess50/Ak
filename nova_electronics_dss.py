@@ -657,7 +657,7 @@ with st.sidebar:
         help="Default is 10,000 as required by the case assignment.",
     )
 
-    seed = st.number_input("Simulation seed", min_value=1, max_value=999999, value=20260914, step=1)
+    seed = st.number_input("Simulation seed", min_value=1, max_value=999999999, value=20260914, step=1)
 
     if len(active) > ENGINEERING_MAX_SUPPLIERS:
         st.info(f"Engineering preference is ≤{ENGINEERING_MAX_SUPPLIERS} qualified suppliers unless resilience benefit is material.")
