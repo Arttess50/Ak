@@ -112,8 +112,12 @@ def effective_landed_cost(s: str, p: str, freight_mult: float = 1.0, yld: float 
 def case_strategy_normal_cost(strategy_key: str) -> float:
     active = STRATEGIES[strategy_key]["suppliers"]
     conc = STRATEGIES[strategy_key]["concentration"]
-    sol = optimize(active, conc, {"P1": 1.0, "P2": 1.0, "P3": 1.0},
-                   DISRUPTION_BASE, 1.0, YIELD_BASE, SPOT_PRICE_BASE, EMERGENCY_CAP)
+    sol = optimize(
+        active, conc, {"P1": 1.0, "P2": 1.0, "P3": 1.0}, DISRUPTION_BASE,
+        capacity_multipliers={s: 1.0 for s in SUPPLIERS},
+        freight_mult=1.0, yields=YIELD_BASE, spot_price=SPOT_PRICE_BASE,
+        emergency_cap=EMERGENCY_CAP
+    )
     return float(sol["objective"]) if sol["success"] else math.nan
 
 # ---------------------------------------------------------------------------
@@ -479,9 +483,12 @@ def answer_query(query, strategy_key, normal, sim, baseline_normal, active, conc
         active2 = tuple(s for s in active if s != "S4")
         if len(active2) == 0:
             return "S4 cannot be disabled when it is the only remaining qualified supplier."
-        alt = optimize(list(active2), concentration, demand_mults, disruption_probs,
-                       {s: 1.0 for s in SUPPLIERS}, 1.0, YIELD_BASE,
-                       SPOT_PRICE_BASE, EMERGENCY_CAP, include_qualification_cost=True)
+        alt = optimize(
+            list(active2), concentration, demand_mults, disruption_probs,
+            capacity_multipliers={s: 1.0 for s in SUPPLIERS},
+            freight_mult=1.0, yields=YIELD_BASE, spot_price=SPOT_PRICE_BASE,
+            emergency_cap=EMERGENCY_CAP, include_qualification_cost=True
+        )
         alt_sim = run_simulation(
             active2, concentration,
             tuple(demand_mults[p] for p in PLANTS),
@@ -515,9 +522,12 @@ def answer_query(query, strategy_key, normal, sim, baseline_normal, active, conc
         )
 
     if "40%" in q and "concentration" in q:
-        alt = optimize(list(active), 0.40, demand_mults, disruption_probs,
-                       {s: 1.0 for s in SUPPLIERS}, 1.0, YIELD_BASE,
-                       SPOT_PRICE_BASE, EMERGENCY_CAP, include_qualification_cost=True)
+        alt = optimize(
+            list(active), 0.40, demand_mults, disruption_probs,
+            capacity_multipliers={s: 1.0 for s in SUPPLIERS},
+            freight_mult=1.0, yields=YIELD_BASE, spot_price=SPOT_PRICE_BASE,
+            emergency_cap=EMERGENCY_CAP, include_qualification_cost=True
+        )
         sim2 = run_simulation(
             tuple(active), 0.40,
             tuple(demand_mults[p] for p in PLANTS),
@@ -674,8 +684,10 @@ if not active:
 
 normal = optimize(
     active, concentration, demand_mults, disruption_probs,
-    {s: 1.0 for s in SUPPLIERS}, 1.0, YIELD_BASE,
-    spot_price, EMERGENCY_CAP, include_qualification_cost=True
+    capacity_multipliers={s: 1.0 for s in SUPPLIERS},
+    freight_mult=1.0, yields=YIELD_BASE,
+    spot_price=spot_price, emergency_cap=EMERGENCY_CAP,
+    include_qualification_cost=True
 )
 if not normal["success"]:
     st.error(f"No feasible solution under the current controls: {normal['message']}")
